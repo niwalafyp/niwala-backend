@@ -355,7 +355,10 @@ exports.getOrderMessages = async (req, res) => {
     if (!order.riderId) {
       return res.status(403).json({ success: false, message: 'Chat opens after a rider accepts your order' });
     }
-    const messages = await Message.find({ orderId: req.params.id }).sort({ createdAt: 1 });
+    const messages = await Message.find({
+      orderId: req.params.id,
+      conversationType: { $ne: 'restaurant_rider' },
+    }).sort({ createdAt: 1 });
     res.json({ success: true, count: messages.length, messages });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -376,11 +379,15 @@ exports.sendMessage = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Chat opens after a rider accepts your order' });
     }
 
-    const isFirstMessage = await Message.countDocuments({ orderId: req.params.id }) === 0;
+    const isFirstMessage = await Message.countDocuments({
+      orderId: req.params.id,
+      conversationType: { $ne: 'restaurant_rider' },
+    }) === 0;
     const msg = await Message.create({
       orderId: req.params.id,
       senderId: req.user._id,
       senderRole: req.user.role,
+      conversationType: 'customer_rider',
       message,
     });
     const payload = { ...msg.toObject(), firstMessage: isFirstMessage };
