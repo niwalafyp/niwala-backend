@@ -1,6 +1,7 @@
 const Order = require('../models/Order');
 const User = require('../models/User');
 const Message = require('../models/Message');
+const { isValidCoordinate, isWithinJhang } = require('../utils/locationBounds');
 
 const RIDER_DELIVERY_FEE = 100;
 const RIDER_ADMIN_COMMISSION_RATE = 0.03;
@@ -281,6 +282,13 @@ exports.updateOrderStatus = async (req, res) => {
 exports.updateLocation = async (req, res) => {
   try {
     const { latitude, longitude, orderId } = req.body;
+    if (!isValidCoordinate(latitude, longitude)) {
+      return res.status(400).json({ success: false, message: 'Valid rider location required' });
+    }
+    if (!isWithinJhang(latitude, longitude)) {
+      return res.status(400).json({ success: false, message: 'Live tracking is available only in Jhang, Punjab for now' });
+    }
+
     const rider = await User.findById(req.user._id);
     rider.currentLatitude = latitude;
     rider.currentLongitude = longitude;

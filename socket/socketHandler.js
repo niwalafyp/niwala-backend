@@ -1,6 +1,7 @@
 const Message = require('../models/Message');
 const Order = require('../models/Order');
 const User = require('../models/User');
+const { isValidCoordinate, isWithinJhang } = require('../utils/locationBounds');
 
 const setupSocket = (io) => {
   io.on('connection', (socket) => {
@@ -40,6 +41,9 @@ const setupSocket = (io) => {
     socket.on('rider_location', async (data) => {
       try {
         const { orderId, riderId, latitude, longitude } = data;
+        if (!isValidCoordinate(latitude, longitude) || !isWithinJhang(latitude, longitude)) {
+          return;
+        }
         await User.findByIdAndUpdate(riderId, {
           currentLatitude: latitude,
           currentLongitude: longitude,

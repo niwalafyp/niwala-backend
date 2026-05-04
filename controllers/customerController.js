@@ -3,6 +3,7 @@ const FoodItem = require('../models/FoodItem');
 const Order = require('../models/Order');
 const Message = require('../models/Message');
 const mongoose = require('mongoose');
+const { isValidCoordinate, isWithinJhang } = require('../utils/locationBounds');
 
 const VOUCHERS = {
   WELCOME50: 50,
@@ -180,8 +181,14 @@ exports.placeOrder = async (req, res) => {
 
     const lat = Number(customerLatitude);
     const lng = Number(customerLongitude);
-    const finalLatitude = Number.isFinite(lat) ? lat : Number(req.user.latitude);
-    const finalLongitude = Number.isFinite(lng) ? lng : Number(req.user.longitude);
+    if (!isValidCoordinate(lat, lng)) {
+      return res.status(400).json({ success: false, message: 'Please fetch a valid delivery location before placing order' });
+    }
+    if (!isWithinJhang(lat, lng)) {
+      return res.status(400).json({ success: false, message: 'Delivery is available only in Jhang, Punjab for now' });
+    }
+    const finalLatitude = lat;
+    const finalLongitude = lng;
     const finalAddress = (deliveryAddress || req.user.address || '').trim();
     if (!finalAddress) {
       return res.status(400).json({ success: false, message: 'Delivery address required' });
